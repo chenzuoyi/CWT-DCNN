@@ -1,0 +1,93 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu May 28 22:09:38 2020
+
+@author: lenovo
+"""
+from torch import nn
+
+import torch
+from torch.nn import functional as F
+from torch import nn
+class ZFNet(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.conv1=nn.Conv2d(in_channels=3,out_channels=96,kernel_size=7,stride=2,padding=1) #[110,110,96]
+        self.bn1  =nn.BatchNorm2d(96)
+        self.maxpool1=nn.MaxPool2d(kernel_size=3,stride=2,padding=1) #[55,55,96]
+        
+        
+
+        self.conv2=nn.Conv2d(in_channels=96,out_channels=256,kernel_size=5,stride=2)#[25,25,256]
+        self.bn2  =nn.BatchNorm2d(256)
+        self.maxpool2=nn.MaxPool2d(kernel_size=3,stride=2,padding=1)#[13,13,256]
+        
+        
+        self.conv3=nn.Conv2d(in_channels=256,out_channels=384,kernel_size=3,stride=1,padding=1)
+        self.bn5  =nn.BatchNorm2d(384)  #增加的
+        self.conv4=nn.Conv2d(in_channels=384,out_channels=384,kernel_size=3,stride=1,padding=1)
+        
+        self.bn3 =nn.BatchNorm2d(384)
+        
+        self.conv5=nn.Conv2d(in_channels=384,out_channels=256,kernel_size=3,stride=1,padding=1)
+        self.bn4 =nn.BatchNorm2d(256)
+
+        self.maxpool3=nn.MaxPool2d(kernel_size=3,stride=2)
+        
+        self.fc1=nn.Linear(in_features=6*6*256,out_features=4096)
+        self.bn7=nn.BatchNorm1d(4096)
+        self.drop1=nn.Dropout2d(0.5)
+        
+
+        
+        self.fc2=nn.Linear(in_features=4096,out_features=4096)
+        
+        self.bn8=nn.BatchNorm1d(4096)#增加的    
+        self.drop2=nn.Dropout2d(0.5)
+        
+        
+        
+        #self.fc5=nn.Linear(in_features=6*6*256,out_features=512) #增加的    
+        3#self.bn9=nn.BatchNorm2d(4096)#增加的    
+
+        #self.drop5=nn.Dropout2d(0.5)  # 增加的
+        
+        self.fc3=nn.Linear(in_features=4096,out_features=6)
+        
+        
+    def forward(self,x):
+        x=F.relu(self.bn1(self.conv1(x)))
+       
+        x=self.maxpool1(x)
+        
+        
+        x=F.relu(self.bn2(self.conv2(x)))
+        
+        x=self.maxpool2(x)
+        
+        
+        x=F.relu(self.bn5(self.conv3(x)))
+        #x=self.bn5(x)#增加的    
+        x=F.relu(self.bn3(self.conv4(x)))
+        #x=self.bn3(x)
+        x=self.maxpool3(F.relu(self.bn4(self.conv5(x))))
+        #x=self.bn4(x)
+        
+        x=x.view(-1,6*6*256)
+        
+        x=F.relu(self.fc1(x))
+        x=self.bn7(x)
+        x=self.drop1(x)
+        
+     
+        x=F.relu(self.fc2(x))
+        x=self.bn8(x)
+        x=self.drop2(x)
+       # print("fc2",x.shape)
+       #x=F.relu(self.fc5(x))#增加的  
+       #x=self.drop5(x)#增加的  
+        x=self.fc3(x)
+        #print("fc3",x.shape)
+        return x
+
+
